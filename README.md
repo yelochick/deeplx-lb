@@ -55,7 +55,7 @@ https://deeplx.yelochick.com/
 
 ![](https://raw.githubusercontent.com/yelochick/deeplx-lb/main/img/immersivetranslate1.png)
 
-![](https://github.com/yelochick/deeplx-lb/blob/main/img/immersivetranslate2.png)
+![](https://raw.githubusercontent.com/yelochick/deeplx-lb/main/img/immersivetranslate2.png)
 
 ## 开发调试
 
