@@ -20,7 +20,7 @@
 
 ![](https://raw.githubusercontent.com/yelochick/deeplx-lb/main/img/vercel2.png)
 
-#### 方式二：Upstash（量大管饱）
+#### 方式二：[Upstash](https://upstash.com/)（量大管饱）
 
 ![](https://raw.githubusercontent.com/yelochick/deeplx-lb/main/img/upstash1.png)
 
