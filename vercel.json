@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/static/index.html"
+    },
+    {
+      "src": "/tailwind.min.css",
+      "dest": "/static/tailwind.min.css"
+    },
+    {
+      "src": "/(.+)",
+      "dest": "app.js"
+    }
+  ]
+}

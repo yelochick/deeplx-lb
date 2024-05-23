@@ -1,0 +1,12 @@
+version: "3"
+services:
+  deeplx-lb:
+    image: yelochick/deeplx-lb
+    container_name: deeplx-lb
+    ports:
+      - "1188:1188"
+    environment:
+      - "KV_REST_API_URL="
+      - "KV_REST_API_TOKEN="
+      # - "UPSTASH_REDIS_REST_URL="
+      # - "UPSTASH_REDIS_REST_TOKEN="

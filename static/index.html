@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/tailwind.min.css"/>
+</head>
+<body class="bg-gray-200 h-screen">
+<div class="flex flex-col">
+  <p class="font-bold text-4xl mx-4 my-4">Deeplx-lb</p>
+  <div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
+    <p class="font-bold">
+      通过
+      <a class="text-blue-500" target="_blank" href="https://fofa.info/result?qbase64=Ym9keT0neyJjb2RlIjoyMDAsIm1lc3NhZ2UiOiJEZWVwTCBGcmVlIEFQSSwgRGV2ZWxvcGVkIGJ5IHNqbGxlbyBhbmQgbWlzc3VvLiBHbyB0byAvdHJhbnNsYXRlIHdpdGggUE9TVC4gaHR0cDovL2dpdGh1Yi5jb20vT3dPLU5ldHdvcmsvRGVlcExYIn0n">Fofa</a>
+      搜索接口
+    </p>
+    <p class="font-bold">添加接口如：https://api.deeplx.org/translate</p>
+    <p class="font-bold">每行一个，接口末尾带不带 /translate 都可以</p>
+    <p class="font-bold">负载均衡请求接口，支持沉浸式翻译，丝滑体验</p>
+  </div>
+  <div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
+    <p id="link" class="font-bold mb-2"></p>
+    <p class="mt-4 mb-2">
+      <a id="copylink" class="bg-red-500 hover:bg-red-700 text-white py-3 px-5 mr-2 rounded" href="javascript:void(0);">点击复制</a>
+    </p>
+  </div>
+</div>
+<div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
+  <textarea rows="5" class="w-full border mb-4 p-2" placeholder="填入接口，每行一个"></textarea>
+  <div class="mb-2">
+    <a id="update" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 mr-2 rounded">提交</a>
+    <a id="clear" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 mr-2 rounded">清理不可用</a>
+    <a id="share" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 mr-2 rounded">分享</a>
+  </div>
+</div>
+<div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
+  <table class="table-auto w-full">
+    <thead>
+    <tr>
+      <th class="border border-gray-700 bg-blue-200 w-10/12 p-2">
+        接口
+      </th>
+      <th class="border border-gray-700 bg-blue-200 p-2">状态</th>
+    </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+</div>
+<script>
+  let urlData = [];
+
+  (function() {
+    window.addEventListener("load", function() {
+      loadUrls();
+
+      document.getElementById("link").innerHTML = window.location.origin + "/translate";
+
+      document.getElementById("copylink").addEventListener("click", function() {
+        let copyText = document.getElementById("link");
+        copy(copyText.innerText);
+      });
+
+      document.getElementById("update").addEventListener("click", function() {
+        let textarea = document.querySelector("textarea");
+        if (textarea.value === "") {
+          return;
+        }
+        let arr = textarea.value.split("\n");
+        fetch("/urls", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(arr),
+        }).then((res) => {
+          alert("提交成功");
+          window.location.reload();
+        });
+      });
+
+      document.getElementById("clear").addEventListener("click", function() {
+        fetch("/clear", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).then((res) => res.json())
+          .then((data) => {
+            if (data.code) {
+              alert("清理完成");
+              window.location.reload();
+            } else {
+              alert("清理失败");
+            }
+          });
+      });
+
+      document.getElementById("share").addEventListener("click", function() {
+        if (urlData.length > 0) {
+          let text = urlData.map(it => it.url + "/translate").join("\n");
+          copy(text);
+        }
+      });
+    });
+  })();
+
+  function loadUrls() {
+    fetch("/urls")
+      .then((res) => res.json())
+      .then((data) => {
+        urlData = data;
+        let tbody = document.getElementById("tbody");
+        for (let obj of data) {
+          let { url, status } = obj;
+          let tr = document.createElement("tr");
+          let td1 = document.createElement("td");
+          let td2 = document.createElement("td");
+          td1.innerHTML = url;
+          let color = status === "1" ? "text-green-500" : "text-red-500";
+          td1.className = "border border-gray-700 p-2";
+          td2.className = `border border-gray-700 p-2 text-center ${color}`;
+          td2.innerHTML = status === "1" ? "可用" : "不可用";
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tbody.appendChild(tr);
+        }
+      });
+  }
+
+  function copy(text) {
+    let tmpInput = document.createElement("textarea");
+    document.body.appendChild(tmpInput);
+    tmpInput.value = text;
+    tmpInput.select();
+    document.execCommand("cut"); // copy
+    tmpInput.remove();
+    alert("复制成功");
+  }
+</script>
+</body>
+</html>
