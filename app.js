@@ -61,6 +61,7 @@ app.get("/urls", async (req, res) => {
 app.post("/urls", async (req, res) => {
   let urls = req.body;
   urls = urls.filter((x) => x !== "" && x.startsWith("http")).map((x) => {
+    x = x.replace(/\s+/g, '')
     if (x.endsWith("/")) {
       x = x.substring(0, x.length - 1);
     }
