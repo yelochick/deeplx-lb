@@ -1,14 +1,14 @@
 import redis from "./redis.js";
 
-let urls = [];
+let apis = [];
 
-const getUrlData = async () => {
-  const urlData = await redis.hgetall("urls");
+const getApiData = async () => {
+  const apiData = await redis.hgetall("urls");
   const result = [];
-  for (let url in urlData) {
+  for (let api in apiData) {
     result.push({
-      url,
-      status: urlData[url],
+      url: api,
+      status: apiData[api],
     });
   }
   result.sort((a, b) => {
@@ -17,19 +17,19 @@ const getUrlData = async () => {
   return result;
 };
 
-const getUrls = async () => {
-  return urls;
+const getApi = () => {
+  return apis;
 };
 
-const initUrls = async () => {
-  urls = [];
+const initialize = async () => {
+  apis = [];
   const urlData = await redis.hgetall("urls");
   console.log(`load urls: ${JSON.stringify(urlData)}`);
   for (let url in urlData) {
     if (urlData[url] === "1") {
-      urls.push(url);
+      apis.push(url);
     }
   }
 }
 
-export default { getUrlData, getUrls, initUrls };
+export default { getApiData, getApi, initialize };

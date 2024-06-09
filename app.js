@@ -3,39 +3,68 @@ import express from "express";
 import axios from "axios";
 import redis from "./src/redis.js";
 import cache from "./src/cache.js";
-import * as url from "node:url";
 
 const app = express();
 const port = process.env.PORT || 1188;
-const ok = {
-  code: 1,
-  msg: "OK",
-};
-const err = {
-  code: 0,
-  msg: "ERROR",
-};
 
 app.use(express.json());
 app.use(express.static("static"));
+app.all("/*", async (req, res, next) => {
+  const authorization = req.header("Authorization") || req.query.password
+  if (checkAuth(authorization)) {
+    next()
+  } else {
+    forbidden(res)
+  }
+})
 
-const createUrlObj = (url, status) => {
+function ok(res, data) {
+  res.send({
+    code: 200,
+    msg: "ok",
+    data: data,
+  })
+}
+
+function error(res) {
+  res.status(500).send({
+    code: 500,
+    msg: "error",
+  });
+}
+
+function forbidden(res) {
+  res.status(403).send({
+    code: 403,
+    msg: "forbidden",
+  })
+}
+
+function checkAuth(authorization) {
+  const password = process.env.PASSWORD
+  if (!password || password === "") {
+    return true
+  }
+  return password === authorization
+}
+
+function createApiObj(url, status) {
   const obj = {};
   obj[url] = status;
   return obj;
-};
+}
 
 app.post("/translate", async (req, res) => {
   const requestURI = req.path;
-  const urls = [...(await cache.getUrls())];
-  if (urls.length === 0) {
-    res.status(500).send(err);
+  const apis = [...(cache.getApi())];
+  if (apis.length === 0) {
+    error(res)
     return;
   }
-  let length = urls.length;
+  let length = apis.length;
   while (length > 0) {
     const randomIndex = Math.floor(Math.random() * length);
-    const targetURL = urls[randomIndex];
+    const targetURL = apis[randomIndex];
     const fullURL = targetURL + requestURI;
     console.log(`request: ${fullURL}, index: ${randomIndex}`);
     try {
@@ -49,21 +78,21 @@ app.post("/translate", async (req, res) => {
       return;
     } catch (error) {
       console.log(`request failure: ${fullURL}, index: ${randomIndex}`);
-      urls.splice(randomIndex, 1);
+      apis.splice(randomIndex, 1);
     }
     length--
   }
-  res.status(500).send(err);
+  error(res)
 });
 
-app.get("/urls", async (req, res) => {
-  const urlData = await cache.getUrlData();
-  res.send(urlData);
+app.get("/api", async (req, res) => {
+  const apiData = await cache.getApiData();
+  ok(res, apiData);
 });
 
-app.post("/urls", async (req, res) => {
-  let urls = req.body;
-  urls = urls.filter((x) => x !== "" && x.startsWith("http") && !x.includes("yelochick")).map((x) => {
+app.post("/api", async (req, res) => {
+  let apis = req.body;
+  apis = apis.filter((api) => api !== "" && api.startsWith("http") && !api.includes("yelochick")).map((x) => {
     x = x.replace(/\s+/g, '')
     if (x.endsWith("/")) {
       x = x.substring(0, x.length - 1);
@@ -73,36 +102,31 @@ app.post("/urls", async (req, res) => {
     }
     return x;
   });
-  if (urls && urls.length > 0) {
-    urls = [...new Set(urls)];
+  if (apis && apis.length > 0) {
+    apis = [...new Set(apis)];
     const headers = { "Content-Type": "application/json" };
     const payload = {
       text: "Hello, World!",
       source_lang: "EN",
       target_lang: "ZH",
     };
-    const promises = urls.map((url) => {
+    const promises = apis.map((api) => {
       return new Promise((resolve) => {
-        axios
-          .post(`${url}/translate`, payload, { headers, timeout: 5000 })
+        axios.post(`${api}/translate`, payload, { headers, timeout: 5000 })
           .then((res) => {
-            if (res.data.data.includes("你好，世界")) {
-              resolve(createUrlObj(url, "1"));
-            } else {
-              resolve(createUrlObj(url, "0"));
-            }
+            resolve(createApiObj(api, res.data.data.includes("你好，世界") ? "1" : "0"));
           })
           .catch((error) => {
-            resolve(createUrlObj(url, "0"));
+            resolve(createApiObj(api, "0"));
           });
       });
     });
     const results = await Promise.all(promises);
     let append = Object.assign({}, ...results);
     await redis.hset("urls", append);
-    await cache.initUrls();
+    await cache.initialize();
   }
-  res.send(ok);
+  ok(res, {})
 });
 
 app.post("/clear", async (req, res) => {
@@ -115,12 +139,26 @@ app.post("/clear", async (req, res) => {
     }
     await redis.del("urls");
     await redis.hset("urls", urlData);
-    await cache.initUrls();
+    await cache.initialize();
   }
-  res.send(ok);
+  ok(res, {})
 });
 
-await cache.initUrls();
+app.post("/checkAuth", async (req, res) => {
+  const password = process.env.PASSWORD
+  if (!password || password === "") {
+    ok(res, { anonymous: true })
+    return
+  }
+  const authorization = req.header("Authorization")
+  if (password !== authorization) {
+    forbidden(res)
+  } else {
+    ok(res, { anonymous: false })
+  }
+})
+
+await cache.initialize();
 
 app.listen(port, async () => {
   console.log(`Server ready on port ${port}.`)

@@ -13,19 +13,23 @@
       <a class="text-blue-500" target="_blank" href="https://fofa.info/result?qbase64=Ym9keT0neyJjb2RlIjoyMDAsIm1lc3NhZ2UiOiJEZWVwTCBGcmVlIEFQSSwgRGV2ZWxvcGVkIGJ5IHNqbGxlbyBhbmQgbWlzc3VvLiBHbyB0byAvdHJhbnNsYXRlIHdpdGggUE9TVC4gaHR0cDovL2dpdGh1Yi5jb20vT3dPLU5ldHdvcmsvRGVlcExYIn0n">Fofa</a>
       搜索接口
     </p>
-    <p class="font-bold">添加接口如：https://api.deeplx.org/translate</p>
     <p class="font-bold">每行一个，接口末尾带不带 /translate 都可以</p>
-    <p class="font-bold">负载均衡请求接口，支持沉浸式翻译，丝滑体验</p>
+    <p class="font-bold">支持沉浸式翻译</p>
   </div>
   <div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
-    <p id="link" class="font-bold mb-2"></p>
-    <p class="mt-4 mb-2">
-      <a id="copylink" class="bg-red-500 hover:bg-red-700 text-white py-3 px-5 mr-2 rounded" href="javascript:void(0);">点击复制</a>
-    </p>
+    <input id="password" type="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5" placeholder="密码"/>
+    <a id="save" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 ml-2 mr-2 rounded">保存</a>
+    <span id="authState" class="text-red-500"></span>
   </div>
 </div>
 <div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
-  <textarea rows="5" class="w-full border mb-4 p-2" placeholder="填入接口，每行一个"></textarea>
+  <p id="link" class="font-bold mb-2"></p>
+  <p class="mt-4 mb-2">
+    <a id="copylink" class="bg-red-500 hover:bg-red-700 text-white py-3 px-5 mr-2 rounded" href="javascript:void(0);">点击复制</a>
+  </p>
+</div>
+<div class="bg-white mx-4 mb-4 p-4 rounded-lg shadow">
+  <textarea rows="5" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm w-full rounded-lg mb-4 p-2" placeholder="填入接口，每行一个"></textarea>
   <div class="mb-2">
     <a id="update" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 mr-2 rounded">提交</a>
     <a id="clear" href="javascript:void(0);" class="bg-blue-500 hover:bg-blue-700 text-white py-3 px-5 mr-2 rounded">清理不可用</a>
@@ -47,12 +51,10 @@
 </div>
 </div>
 <script>
-  let urlData = [];
+  let apiData = [];
 
   (function() {
     window.addEventListener("load", function() {
-      loadUrls();
-
       document.getElementById("link").innerHTML = window.location.origin + "/translate";
 
       document.getElementById("copylink").addEventListener("click", function() {
@@ -65,50 +67,49 @@
         if (textarea.value === "") {
           return;
         }
-        let arr = textarea.value.split("\n");
-        fetch("/urls", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(arr),
-        }).then((res) => {
-          alert("提交成功");
-          window.location.reload();
-        });
+        let apis = textarea.value.split("\n");
+        updateApi(apis)
       });
 
       document.getElementById("clear").addEventListener("click", function() {
-        fetch("/clear", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }).then((res) => res.json())
-          .then((data) => {
-            if (data.code) {
-              alert("清理完成");
-              window.location.reload();
-            } else {
-              alert("清理失败");
-            }
-          });
+        clearApi()
       });
 
       document.getElementById("share").addEventListener("click", function() {
-        if (urlData.length > 0) {
-          let text = urlData.map(it => it.url + "/translate").join("\n");
+        if (apiData.length > 0) {
+          let text = apiData.map(it => it.url + "/translate").join("\n");
           copy(text);
         }
       });
+
+      document.getElementById("save").addEventListener("click", function() {
+        const password = document.getElementById("password").value
+        if (password && password !== "") {
+          localStorage.setItem("authorization", document.getElementById("password").value);
+          window.location.reload()
+        }
+      })
+
+      checkAuth()
+      loadApi()
     });
   })();
 
-  function loadUrls() {
-    fetch("/urls")
-      .then((res) => res.json())
-      .then((data) => {
-        urlData = data;
+  function loadApi() {
+    const authorization = localStorage.getItem("authorization")
+    fetch("/api", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+    }).then((res) => res.json())
+      .then((resJson) => {
+        const { code, data } = resJson
+        if (code !== 200) {
+          return
+        }
+        apiData = data;
         let tbody = document.getElementById("tbody");
         for (let obj of data) {
           let { url, status } = obj;
@@ -125,6 +126,68 @@
           tbody.appendChild(tr);
         }
       });
+  }
+
+  function updateApi(apis) {
+    const authorization = localStorage.getItem("authorization")
+    fetch("/api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+      body: JSON.stringify(apis),
+    }).then((res) => res.json())
+      .then((data) => {
+        if (data.code === 200) {
+          alert("提交成功");
+          window.location.reload();
+        } else {
+          alert("提交失败");
+        }
+      });
+  }
+
+  function clearApi() {
+    const authorization = localStorage.getItem("authorization")
+    fetch("/clear", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+    }).then((res) => res.json())
+      .then((resJson) => {
+        const { code } = resJson
+        if (code === 200) {
+          alert("清理完成");
+          window.location.reload();
+        } else {
+          alert("清理失败");
+        }
+      });
+  }
+
+  function checkAuth() {
+    const authorization = localStorage.getItem("authorization")
+    fetch("/checkAuth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+    }).then((res) => res.json())
+      .then((resJson) => {
+        const { code } = resJson
+        const authState = document.getElementById("authState")
+        if (code === 200) {
+          authState.className = "text-green-500"
+          authState.innerHTML = "状态：验证成功"
+        } else {
+          authState.className = "text-red-500"
+          authState.innerHTML = "状态：验证失败"
+        }
+      })
   }
 
   function copy(text) {

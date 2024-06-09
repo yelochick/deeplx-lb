@@ -34,18 +34,23 @@ https://deeplx.yelochick.com/
 
 ### 设置环境变量（Vercel KV 和 Upstash 二者选其一）
 
-| 环境变量                   | 说明     |
-| -------------------------- | -------- |
-| `KV_REST_API_URL`          | 默认使用 |
-| `KV_REST_API_TOKEN`        | 默认使用 |
-| `UPSTASH_REDIS_REST_URL`   |          |
-| `UPSTASH_REDIS_REST_TOKEN` |          |
+| 环境变量                   | 说明                         |
+| -------------------------- | ---------------------------- |
+| `KV_REST_API_URL`          | 默认使用                     |
+| `KV_REST_API_TOKEN`        | 默认使用                     |
+| `UPSTASH_REDIS_REST_URL`   |                              |
+| `UPSTASH_REDIS_REST_TOKEN` |                              |
+| `PASSWORD`                 | 密码验证，不设置时可匿名访问 |
 
+### 密码验证
 
+设置了密码验证后，`url`需要带上`password`参数
+
+如：`http://127.0.0.1:1188/translate?password=[PASSWORD]`
 
 ## Docker 部署（自行修改环境变量，不然启动失败报错）
 
-`docker run -d -p "1188:1188" -e KV_REST_API_URL="" -e KV_REST_API_TOKEN="" yelochick/deeplx-lb`
+`docker run -d -p "1188:1188" -e KV_REST_API_URL="" -e KV_REST_API_TOKEN="" -e PASSWORD="" yelochick/deeplx-lb`
 
 或者
 
