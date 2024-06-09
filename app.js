@@ -100,7 +100,7 @@ app.post("/urls", async (req, res) => {
     const results = await Promise.all(promises);
     let append = Object.assign({}, ...results);
     await redis.hset("urls", append);
-    cache.clearUrls();
+    await cache.initUrls();
   }
   res.send(ok);
 });
@@ -115,9 +115,13 @@ app.post("/clear", async (req, res) => {
     }
     await redis.del("urls");
     await redis.hset("urls", urlData);
-    cache.clearUrls();
+    await cache.initUrls();
   }
   res.send(ok);
 });
 
-app.listen(port, () => console.log(`Server ready on port ${port}.`));
+await cache.initUrls();
+
+app.listen(port, async () => {
+  console.log(`Server ready on port ${port}.`)
+});

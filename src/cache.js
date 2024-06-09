@@ -18,21 +18,18 @@ const getUrlData = async () => {
 };
 
 const getUrls = async () => {
-  if (urls && urls.length > 0) {
-    return urls;
-  }
+  return urls;
+};
+
+const initUrls = async () => {
+  urls = [];
   const urlData = await redis.hgetall("urls");
-  console.log(`reload urls: ${JSON.stringify(urlData)}`);
+  console.log(`load urls: ${JSON.stringify(urlData)}`);
   for (let url in urlData) {
     if (urlData[url] === "1") {
       urls.push(url);
     }
   }
-  return urls;
-};
+}
 
-const clearUrls = () => {
-  urls = [];
-};
-
-export default { getUrlData, getUrls, clearUrls };
+export default { getUrlData, getUrls, initUrls };
