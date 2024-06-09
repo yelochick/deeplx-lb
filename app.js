@@ -3,6 +3,7 @@ import express from "express";
 import axios from "axios";
 import redis from "./src/redis.js";
 import cache from "./src/cache.js";
+import * as url from "node:url";
 
 const app = express();
 const port = process.env.PORT || 1188;
@@ -31,11 +32,12 @@ app.post("/translate", async (req, res) => {
     res.status(500).send(err);
     return;
   }
-  while (urls.length > 0) {
-    const randomIndex = Math.floor(Math.random() * urls.length);
+  let length = urls.length;
+  while (length > 0) {
+    const randomIndex = Math.floor(Math.random() * length);
     const targetURL = urls[randomIndex];
     const fullURL = targetURL + requestURI;
-    console.log(`request: ${fullURL}`);
+    console.log(`request: ${fullURL}, index: ${randomIndex}`);
     try {
       let r = await axios.post(fullURL, req.body, {
         headers: {
@@ -46,9 +48,10 @@ app.post("/translate", async (req, res) => {
       res.send(r.data);
       return;
     } catch (error) {
-      console.log(`request failure: ${fullURL}`);
+      console.log(`request failure: ${fullURL}, index: ${randomIndex}`);
       urls.splice(randomIndex, 1);
     }
+    length--
   }
   res.status(500).send(err);
 });
