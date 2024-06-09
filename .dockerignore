@@ -9,6 +9,7 @@ dist
 .idea
 .vercel
 .vercelignore
+.env
 img
 vercel.json
 postcss.config.cjs
