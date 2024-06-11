@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <title>Deeplx-lb</title>
   <link rel="stylesheet" href="/tailwind.min.css"/>
 </head>
 <body class="bg-gray-200 h-screen">
@@ -40,10 +41,9 @@
   <table class="table-auto w-full">
     <thead>
     <tr>
-      <th class="border border-gray-700 bg-blue-200 w-10/12 p-2">
-        接口
-      </th>
-      <th class="border border-gray-700 bg-blue-200 p-2">状态</th>
+      <th class="border border-gray-700 bg-blue-200 w-1/12 p-2">序号</th>
+      <th class="border border-gray-700 bg-blue-200 w-10/12 p-2">接口</th>
+      <th class="border border-gray-700 bg-blue-200 w-1/12 p-2">状态</th>
     </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -59,7 +59,12 @@
 
       document.getElementById("copylink").addEventListener("click", function() {
         let copyText = document.getElementById("link");
-        copy(copyText.innerText);
+        const authorization = localStorage.getItem("authorization")
+        let url = copyText.innerText
+        if (authorization && authorization !== "") {
+          url = url + "?password=" + authorization
+        }
+        copy(url);
       });
 
       document.getElementById("update").addEventListener("click", function() {
@@ -111,18 +116,23 @@
         }
         apiData = data;
         let tbody = document.getElementById("tbody");
+        let i = 1;
         for (let obj of data) {
           let { url, status } = obj;
           let tr = document.createElement("tr");
           let td1 = document.createElement("td");
           let td2 = document.createElement("td");
-          td1.innerHTML = url;
+          let td3 = document.createElement("td");
+          td1.innerHTML = `${i++}`;
+          td2.innerHTML = url;
           let color = status === "1" ? "text-green-500" : "text-red-500";
-          td1.className = "border border-gray-700 p-2";
-          td2.className = `border border-gray-700 p-2 text-center ${color}`;
-          td2.innerHTML = status === "1" ? "可用" : "不可用";
+          td1.className = "border border-gray-700 p-2 text-center";
+          td2.className = "border border-gray-700 p-2";
+          td3.className = `border border-gray-700 p-2 text-center ${color}`;
+          td3.innerHTML = status === "1" ? "可用" : "不可用";
           tr.appendChild(td1);
           tr.appendChild(td2);
+          tr.appendChild(td3);
           tbody.appendChild(tr);
         }
       });

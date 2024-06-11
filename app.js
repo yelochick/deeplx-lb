@@ -54,6 +54,20 @@ function createApiObj(url, status) {
   return obj;
 }
 
+function checkIgnoreKeywords(url) {
+  const ignoreKeywords = process.env.IGNORE_KEYWORDS
+  if (!ignoreKeywords || ignoreKeywords === "") {
+    return true
+  }
+  const keywords = ignoreKeywords.split(",")
+  for (let keyword of keywords) {
+    if (url.includes(keyword)) {
+      return false
+    }
+  }
+  return true
+}
+
 app.post("/translate", async (req, res) => {
   const requestURI = req.path;
   const apis = [...(cache.getApi())];
@@ -92,7 +106,11 @@ app.get("/api", async (req, res) => {
 
 app.post("/api", async (req, res) => {
   let apis = req.body;
-  apis = apis.filter((api) => api !== "" && api.startsWith("http") && !api.includes("yelochick")).map((x) => {
+  apis = apis.filter((api) =>
+    api !== "" &&
+    api.startsWith("http") &&
+    checkIgnoreKeywords(api)
+  ).map((x) => {
     x = x.replace(/\s+/g, '')
     if (x.endsWith("/")) {
       x = x.substring(0, x.length - 1);

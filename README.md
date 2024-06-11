@@ -6,11 +6,9 @@ https://deeplx.yelochick.com/
 
 通过 [Fofa](https://fofa.info/result?qbase64=Ym9keT0neyJjb2RlIjoyMDAsIm1lc3NhZ2UiOiJEZWVwTCBGcmVlIEFQSSwgRGV2ZWxvcGVkIGJ5IHNqbGxlbyBhbmQgbWlzc3VvLiBHbyB0byAvdHJhbnNsYXRlIHdpdGggUE9TVC4gaHR0cDovL2dpdGh1Yi5jb20vT3dPLU5ldHdvcmsvRGVlcExYIn0n) 搜索接口
 
-添加接口如：https://api.deeplx.org/translate
-
 每行一个，接口末尾带不带 /translate 都可以
 
-负载均衡请求接口，支持沉浸式翻译，丝滑体验
+支持沉浸式翻译
 
 ## Vercel 一键部署
 
@@ -34,13 +32,14 @@ https://deeplx.yelochick.com/
 
 ### 设置环境变量（Vercel KV 和 Upstash 二者选其一）
 
-| 环境变量                   | 说明                         |
-| -------------------------- | ---------------------------- |
-| `KV_REST_API_URL`          | 默认使用                     |
-| `KV_REST_API_TOKEN`        | 默认使用                     |
-| `UPSTASH_REDIS_REST_URL`   |                              |
-| `UPSTASH_REDIS_REST_TOKEN` |                              |
-| `PASSWORD`                 | 密码验证，不设置时可匿名访问 |
+| 环境变量                   | 说明                                 |
+| -------------------------- | ------------------------------------ |
+| `KV_REST_API_URL`          | 默认使用                             |
+| `KV_REST_API_TOKEN`        | 默认使用                             |
+| `UPSTASH_REDIS_REST_URL`   |                                      |
+| `UPSTASH_REDIS_REST_TOKEN` |                                      |
+| `PASSWORD`                 | 密码验证，不设置时可匿名访问         |
+| `IGNORE_KEYWORDS`          | 关键字过滤添加的接口，逗号(英文)分隔 |
 
 ### 密码验证
 
@@ -50,11 +49,15 @@ https://deeplx.yelochick.com/
 
 ## Docker 部署（自行修改环境变量，不然启动失败报错）
 
-`docker run -d -p "1188:1188" -e KV_REST_API_URL="" -e KV_REST_API_TOKEN="" -e PASSWORD="" yelochick/deeplx-lb`
+```shell
+docker run -d -p "1188:1188" -e KV_REST_API_URL="" -e KV_REST_API_TOKEN="" -e PASSWORD="" -e IGNORE_KEYWORDS="" yelochick/deeplx-lb
+```
 
 或者
 
-`docker-compose up -d`
+```shell
+docker-compose up -d
+```
 
 ## 沉浸式翻译
 
