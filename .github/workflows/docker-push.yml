@@ -37,4 +37,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64,linux/arm64
           tags: |
-            yelochick/${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:latest
