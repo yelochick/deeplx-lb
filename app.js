@@ -149,7 +149,11 @@ app.get("/api", async (req, res) => {
 app.post("/api", async (req, res) => {
   try {
     let apis = req.body
-    apis = apis.filter((api) => api !== "" && api.startsWith("http") && checkIgnoreKeywords(api)).map((x) => {
+    apis = apis.filter((api) =>
+      api !== "" &&
+      api.startsWith("http") &&
+      !api.includes("api.deeplx.org") &&
+      checkIgnoreKeywords(api)).map((x) => {
       x = x.replace(/\s+/g, '')
       if (x.endsWith("/")) {
         x = x.substring(0, x.length - 1)
