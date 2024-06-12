@@ -70,7 +70,7 @@ function checkIgnoreKeywords(url) {
 }
 
 async function initialize() {
-  const apiData = await redis.hgetall("urls")
+  const apiData = await redis.hgetall("urls") || {}
   cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
 }
 
@@ -128,7 +128,7 @@ app.post("/translate", async (req, res) => {
 
 app.get("/api", async (req, res) => {
   try {
-    const apiData = await redis.hgetall("urls")
+    const apiData = await redis.hgetall("urls") || {}
     const result = []
     Object.keys(apiData).forEach(key => {
       result.push({
