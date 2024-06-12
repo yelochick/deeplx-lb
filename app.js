@@ -77,7 +77,9 @@ function checkIgnoreKeywords(url) {
 
 async function initialize() {
   const apiData = await redis.hgetall(url_key)
-  cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
+  if(apiData){
+    cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
+  }
 }
 
 async function checkApi(apis) {
