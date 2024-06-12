@@ -34,6 +34,7 @@
 | `KV_REST_API_TOKEN`        | 默认使用                             |
 | `UPSTASH_REDIS_REST_URL`   |                                      |
 | `UPSTASH_REDIS_REST_TOKEN` |                                      |
+| `PREFIX_KEY`               | 缓存Key前缀                                     |
 | `PASSWORD`                 | 密码验证，不设置时可匿名访问         |
 | `IGNORE_KEYWORDS`          | 关键字过滤添加的接口，逗号(英文)分隔 |
 
