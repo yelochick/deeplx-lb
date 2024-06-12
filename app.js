@@ -127,65 +127,85 @@ app.post("/translate", async (req, res) => {
 })
 
 app.get("/api", async (req, res) => {
-  const apiData = await redis.hgetall("urls")
-  const result = []
-  Object.keys(apiData).forEach(key => {
-    result.push({
-      url: key,
-      status: apiData[key],
+  try {
+    const apiData = await redis.hgetall("urls")
+    const result = []
+    Object.keys(apiData).forEach(key => {
+      result.push({
+        url: key,
+        status: apiData[key],
+      })
     })
-  })
-  result.sort((a, b) => {
-    return a.url.localeCompare(b.url)
-  })
-  ok(res, result)
+    result.sort((a, b) => {
+      return a.url.localeCompare(b.url)
+    })
+    ok(res, result)
+  } catch (e) {
+    console.log(e)
+    error(res)
+  }
 })
 
 app.post("/api", async (req, res) => {
-  let apis = req.body
-  apis = apis.filter((api) => api !== "" && api.startsWith("http") && checkIgnoreKeywords(api)).map((x) => {
-    x = x.replace(/\s+/g, '')
-    if (x.endsWith("/")) {
-      x = x.substring(0, x.length - 1)
+  try {
+    let apis = req.body
+    apis = apis.filter((api) => api !== "" && api.startsWith("http") && checkIgnoreKeywords(api)).map((x) => {
+      x = x.replace(/\s+/g, '')
+      if (x.endsWith("/")) {
+        x = x.substring(0, x.length - 1)
+      }
+      if (x.endsWith("/translate")) {
+        x = x.substring(0, x.length - 10)
+      }
+      return x
+    })
+    if (apis && apis.length > 0) {
+      const checkedApiData = await checkApi(apis)
+      await redis.hset("urls", checkedApiData)
+      await initialize()
     }
-    if (x.endsWith("/translate")) {
-      x = x.substring(0, x.length - 10)
-    }
-    return x
-  })
-  if (apis && apis.length > 0) {
-    const checkedApiData = await checkApi(apis)
-    await redis.hset("urls", checkedApiData)
-    await initialize()
+    ok(res, {})
+  } catch (e) {
+    console.log(e)
+    error(res)
   }
-  ok(res, {})
 })
 
 app.post("/clear", async (req, res) => {
-  const apiData = (await redis.hgetall("urls")) || {}
-  if (JSON.stringify(apiData) !== "{}") {
-    const apis = Object.keys(apiData)
-    const checkedApiData = await checkApi(apis)
-    const filterApiData = {}
-    Object.keys(checkedApiData).filter(key => checkedApiData[key] === "1").forEach(v => filterApiData[v] = "1")
-    await redis.del("urls")
-    await redis.hset("urls", filterApiData)
-    cacheApis = [...Object.keys(filterApiData)]
+  try {
+    const apiData = (await redis.hgetall("urls")) || {}
+    if (JSON.stringify(apiData) !== "{}") {
+      const apis = Object.keys(apiData)
+      const checkedApiData = await checkApi(apis)
+      const filterApiData = {}
+      Object.keys(checkedApiData).filter(key => checkedApiData[key] === "1").forEach(v => filterApiData[v] = "1")
+      await redis.del("urls")
+      await redis.hset("urls", filterApiData)
+      cacheApis = [...Object.keys(filterApiData)]
+    }
+    ok(res, {})
+  } catch (e) {
+    console.log(e)
+    error(res)
   }
-  ok(res, {})
 })
 
 app.post("/checkAuth", async (req, res) => {
   const password = process.env.PASSWORD
-  if (!password || password === "") {
-    ok(res, { anonymous: true })
-    return
-  }
-  const authorization = req.header("Authorization")
-  if (password !== authorization) {
-    forbidden(res)
-  } else {
-    ok(res, { anonymous: false })
+  try {
+    if (!password || password === "") {
+      ok(res, { anonymous: true })
+      return
+    }
+    const authorization = req.header("Authorization")
+    if (password !== authorization) {
+      forbidden(res)
+    } else {
+      ok(res, { anonymous: false })
+    }
+  } catch (e) {
+    console.log(e)
+    error(res)
   }
 })
 
