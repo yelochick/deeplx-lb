@@ -17,6 +17,12 @@ app.all("/*", async (req, res, next) => {
   }
 })
 
+const key_prefix = process.env.PREFIX_KEY;
+let url_key = "urls";
+if (key_prefix) {
+  url_key = key_prefix + ":" + url_key;
+}
+
 let cacheApis = []
 
 function ok(res, data) {
@@ -70,8 +76,10 @@ function checkIgnoreKeywords(url) {
 }
 
 async function initialize() {
-  const apiData = await redis.hgetall("urls") || {}
-  cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
+  const apiData = await redis.hgetall(url_key)
+  if (apiData) {
+    cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
+  }
 }
 
 async function checkApi(apis) {
@@ -128,7 +136,7 @@ app.post("/translate", async (req, res) => {
 
 app.get("/api", async (req, res) => {
   try {
-    const apiData = await redis.hgetall("urls") || {}
+    const apiData = await redis.hgetall(url_key) || {}
     const result = []
     Object.keys(apiData).forEach(key => {
       result.push({
@@ -165,7 +173,7 @@ app.post("/api", async (req, res) => {
     })
     if (apis && apis.length > 0) {
       const checkedApiData = await checkApi(apis)
-      await redis.hset("urls", checkedApiData)
+      await redis.hset(url_key, checkedApiData)
       await initialize()
     }
     ok(res, {})
@@ -177,14 +185,14 @@ app.post("/api", async (req, res) => {
 
 app.post("/clear", async (req, res) => {
   try {
-    const apiData = (await redis.hgetall("urls")) || {}
+    const apiData = (await redis.hgetall(url_key)) || {}
     if (JSON.stringify(apiData) !== "{}") {
       const apis = Object.keys(apiData)
       const checkedApiData = await checkApi(apis)
       const filterApiData = {}
       Object.keys(checkedApiData).filter(key => checkedApiData[key] === "1").forEach(v => filterApiData[v] = "1")
-      await redis.del("urls")
-      await redis.hset("urls", filterApiData)
+      await redis.del(url_key)
+      await redis.hset(url_key, filterApiData)
       cacheApis = [...Object.keys(filterApiData)]
     }
     ok(res, {})
