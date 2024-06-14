@@ -19,7 +19,7 @@ app.all("/*", async (req, res, next) => {
 
 const key_prefix = process.env.PREFIX_KEY;
 let url_key = "urls";
-if(key_prefix){
+if (key_prefix) {
   url_key = key_prefix + ":" + url_key;
 }
 
@@ -77,7 +77,7 @@ function checkIgnoreKeywords(url) {
 
 async function initialize() {
   const apiData = await redis.hgetall(url_key)
-  if(apiData){
+  if (apiData) {
     cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
   }
 }
@@ -136,7 +136,7 @@ app.post("/translate", async (req, res) => {
 
 app.get("/api", async (req, res) => {
   try {
-    const apiData = await redis.hgetall(url_key)
+    const apiData = await redis.hgetall(url_key) || {}
     const result = []
     Object.keys(apiData).forEach(key => {
       result.push({
@@ -157,7 +157,11 @@ app.get("/api", async (req, res) => {
 app.post("/api", async (req, res) => {
   try {
     let apis = req.body
-    apis = apis.filter((api) => api !== "" && api.startsWith("http") && checkIgnoreKeywords(api)).map((x) => {
+    apis = apis.filter((api) =>
+      api !== "" &&
+      api.startsWith("http") &&
+      !api.includes("api.deeplx.org") &&
+      checkIgnoreKeywords(api)).map((x) => {
       x = x.replace(/\s+/g, '')
       if (x.endsWith("/")) {
         x = x.substring(0, x.length - 1)
