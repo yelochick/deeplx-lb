@@ -18,10 +18,10 @@ app.all("/*", async (req, res, next) => {
   }
 })
 
-const key_prefix = process.env.PREFIX_KEY
-let url_key = "urls"
-if (key_prefix) {
-  url_key = key_prefix + ":" + url_key
+const keyPrefix = process.env.PREFIX_KEY
+let urlKey = "urls"
+if (keyPrefix) {
+  urlKey = keyPrefix + ":" + urlKey
 }
 
 let cacheApis = []
@@ -78,7 +78,7 @@ function checkIgnoreKeywords(url) {
 }
 
 async function initialize() {
-  const apiData = await redis.hgetall(url_key)
+  const apiData = await redis.hgetall(urlKey)
   if (apiData) {
     cacheApis = [...Object.keys(apiData).filter(key => apiData[key] === "1")]
     apiReqFailureTimes = {}
@@ -133,7 +133,7 @@ async function checkApi(apis) {
   }
   const promises = apis.map((api) => {
     return new Promise((resolve) => {
-      axios.post(`${api}/translate`, payload, { headers, timeout: 2000 })
+      axios.post(`${api}/translate`, payload, { headers, timeout: 5000 })
         .then((res) => {
           resolve(createApiObj(api, res.data.data.includes("你好，世界") ? "1" : "0"))
         })
@@ -186,7 +186,7 @@ app.post("/translate", async (req, res) => {
 
 app.get("/api", async (req, res) => {
   try {
-    const apiData = await redis.hgetall(url_key) || {}
+    const apiData = await redis.hgetall(urlKey) || {}
     const result = []
     Object.keys(apiData).forEach(key => {
       // 如果url在失效列表中且数值大于等于 maxApiReqFailureTimes 则为失效
@@ -226,7 +226,7 @@ app.post("/api", async (req, res) => {
     })
     if (apis && apis.length > 0) {
       const checkedApiData = await checkApi(apis)
-      await redis.hset(url_key, checkedApiData)
+      await redis.hset(urlKey, checkedApiData)
       await initialize()
     }
     ok(res, {})
@@ -238,14 +238,18 @@ app.post("/api", async (req, res) => {
 
 app.post("/clear", async (req, res) => {
   try {
-    const apiData = (await redis.hgetall(url_key)) || {}
+    const apiData = (await redis.hgetall(urlKey)) || {}
     if (JSON.stringify(apiData) !== "{}") {
       const apis = Object.keys(apiData)
       const checkedApiData = await checkApi(apis)
       const filterApiData = {}
       Object.keys(checkedApiData).filter(key => checkedApiData[key] === "1").forEach(v => filterApiData[v] = "1")
-      await redis.del(url_key)
-      await redis.hset(url_key, filterApiData)
+      await redis.del(urlKey)
+      if (JSON.stringify(filterApiData) === "{}") {
+        await redis.del(urlKey)
+      } else {
+        await redis.hset(urlKey, filterApiData)
+      }
       cacheApis = [...Object.keys(filterApiData)]
     }
     ok(res, {})
